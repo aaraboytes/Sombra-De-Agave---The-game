@@ -1,0 +1,9 @@
+lastUpgrade=00961
+proj.pluginVersion=0.9.61
+proj.AppId=1011983920620
+and.BundleId=com.SombraDeAgave.SombraDeAgaveTheGame
+proj.classDir=Assets
+proj.ConstantsClassName=GPGSIds
+and.ResourceData=%3c%3fxml+version%3d%221.0%22+encoding%3d%22utf-8%22%3f%3e%0d%0a%3c%21--%0d%0aGoogle+Play+game+services+IDs.%0d%0aSave+this+file+as+res%2fvalues%2fgames-ids.xml+in+your+project.%0d%0a--%3e%0d%0a%3cresources%3e%0d%0a++%3c%21--+app_id+--%3e%0d%0a++%3cstring+name%3d%22app_id%22+translatable%3d%22false%22%3e1011983920620%3c%2fstring%3e%0d%0a++%3c%21--+package_name+--%3e%0d%0a++%3cstring+name%3d%22package_name%22+translatable%3d%22false%22%3ecom.SombraDeAgave.SombraDeAgaveTheGame%3c%2fstring%3e%0d%0a++%3c%21--+achievement+Bienvenido+--%3e%0d%0a++%3cstring+name%3d%22achievement_bienvenido%22+translatable%3d%22false%22%3eCgkI7NvE97kdEAIQAQ%3c%2fstring%3e%0d%0a++%3c%21--+achievement+Supremo+lider+--%3e%0d%0a++%3cstring+name%3d%22achievement_supremo_lider%22+translatable%3d%22false%22%3eCgkI7NvE97kdEAIQAg%3c%2fstring%3e%0d%0a++%3c%21--+achievement+Servidor+profesional+--%3e%0d%0a++%3cstring+name%3d%22achievement_servidor_profesional%22+translatable%3d%22false%22%3eCgkI7NvE97kdEAIQBA%3c%2fstring%3e%0d%0a++%3c%21--+leaderboard+Puntajes+--%3e%0d%0a++%3cstring+name%3d%22leaderboard_puntajes%22+translatable%3d%22false%22%3eCgkI7NvE97kdEAIQAw%3c%2fstring%3e%0d%0a%3c%2fresources%3e%0d%0a
+and.ClientId=
+android.SetupDone=true

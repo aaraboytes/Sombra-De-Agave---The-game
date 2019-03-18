@@ -17,17 +17,20 @@ public class Tequila : MonoBehaviour
         {
             if (!sombraDeAgave && other.GetComponent<Tequila>().sombraDeAgave && !other.GetComponent<Tequila>().returning && !returning)
             {
-                TablesManager._instance.PoisonExplosion(gameObject.transform);
+                TablesManager._instance.PoisonExplosion(other.gameObject,gameObject);
             }
         }
     }
     public void Reinitialize()
     {
         returning = false;
-        body.velocity = Vector3.zero;
-        body.useGravity = false;
-        body.transform.rotation = Quaternion.identity;
-        body.angularVelocity = Vector3.zero;
+        if (body)
+        {
+            body.velocity = Vector3.zero;
+            body.useGravity = false;
+            body.transform.rotation = Quaternion.identity;
+            body.angularVelocity = Vector3.zero;
+        }
         GetComponent<Collider>().isTrigger = true;
         GetComponent<Animator>().SetTrigger("Reset");
     }

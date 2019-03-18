@@ -12,10 +12,12 @@ public class LordCrudaController : MonoBehaviour
     bool served = true;
     Vector3 movement;
     Rigidbody body;
+    Animator anim;
     void Start()
     {
         body = GetComponent<Rigidbody>();
         StartCoroutine("Move");
+        anim = GetComponent<Animator>();
     }
 
     void Update()
@@ -27,11 +29,13 @@ public class LordCrudaController : MonoBehaviour
         }
         if(Vector3.Distance(transform.position, positions[nextPos].position) <= 0.5f && !served)
         {
+            Debug.Log("serving");
             body.velocity = Vector3.zero;
             TablesManager._instance.ThrowBottle(nextPos, false);
             served = true;
             timer = 0;
         }
+        anim.SetFloat("speed", -Mathf.Abs(body.velocity.z));
     }
     void Serve()
     {

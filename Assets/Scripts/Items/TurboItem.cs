@@ -15,9 +15,11 @@ public class TurboItem : Item
     }
     public override void Activate()
     {
+        if(!player)
+            player = FindObjectOfType<PlayerController>();
+        transform.position = player.transform.position;
         player.speed = newSpeed;
         TablesManager._instance.sombraDeAgaveForce = newThrowForce;
-        GetComponent<Collider>().enabled = false;
         Invoke("Reinitialize", turbotime);
     }
     public override void Reinitialize()
@@ -25,8 +27,6 @@ public class TurboItem : Item
         Debug.Log("Turning off effect");
         player.speed = currentPlayerSpeed;
         TablesManager._instance.sombraDeAgaveForce = currentPlayerForce;
-        GetComponent<Collider>().enabled = true;
-        GetComponent<MeshRenderer>().enabled = true;
         gameObject.SetActive(false);
     }
 }

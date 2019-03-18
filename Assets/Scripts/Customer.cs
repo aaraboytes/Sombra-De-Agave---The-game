@@ -8,7 +8,13 @@ public class Customer : MonoBehaviour
     public float timeToMove;
     public float speed;
     public float throwForce;
-    public float minX;
+    [Header("Sprites")]
+    public Sprite normalSprite;
+    public Sprite madSprite;
+    public Sprite drunkSprite;
+    public Sprite happySprite;
+    SpriteRenderer sprite;
+
     int customerPosition;
     bool done = false;
     bool drunk = false;
@@ -19,6 +25,7 @@ public class Customer : MonoBehaviour
     GameObject madSymbol;
     GameObject drunkSymbol;
     GameObject happySymbol;
+    GameObject currentDrink = null;
     private void Start()
     {
         body = GetComponent<Rigidbody>();
@@ -26,6 +33,7 @@ public class Customer : MonoBehaviour
         madSymbol = transform.GetChild(0).gameObject;
         drunkSymbol = transform.GetChild(1).gameObject;
         happySymbol = transform.GetChild(2).gameObject;
+        sprite = GetComponent<SpriteRenderer>();
     }
     void Update()
     {
@@ -42,7 +50,7 @@ public class Customer : MonoBehaviour
                 body.velocity = Vector3.zero;
             }
             //Reach the limit
-            if(transform.position.x<= minX)
+            if(transform.position.x>= TablesManager._instance.customerLimitPos.position.x)
             {
                 hand = false;
                 StopAllCoroutines();
@@ -67,6 +75,7 @@ public class Customer : MonoBehaviour
                 DrinkTequila(other.gameObject);
             }
         } else if (other.CompareTag("Recipiente") && hand){
+            Debug.Log("Recipiente");
             Recipient currentRecipient = other.GetComponent<Recipient>();
             if (currentRecipient.activated)
             {
@@ -99,6 +108,7 @@ public class Customer : MonoBehaviour
     }
     void DrinkTequila(GameObject tequila)
     {
+        currentDrink = tequila;
         Tequila t = tequila.GetComponent<Tequila>();
         if (t.sombraDeAgave)
         {
@@ -106,41 +116,51 @@ public class Customer : MonoBehaviour
             {
                 //Return to normality
                 StopAllCoroutines();
-                StartCoroutine(DrunkToNormal(tequila));
+                StartCoroutine(DrunkToNormal());
             }
             else
             {
                 //Satisfy the customer
-                GoodDrink(tequila);
+                GoodDrink();
+                TablesManager._instance.ServedCustomer(gameObject);
             }
         }
         else
         {
             StopAllCoroutines();
-            StartCoroutine(GetDrunk(tequila));
+            StartCoroutine(GetDrunk());
         }
     }
-    #region Drink
-    public void GoodDrink(GameObject tequila)
+    void ReturnTequila()
     {
-        //Start retiring
-        body.velocity = Vector3.zero;
-        StopAllCoroutines();
-        StartCoroutine(Return(tequila));
-        //Increase score
-        happySymbol.SetActive(true);
-        GameManager._instance.IncreaseScore();
-        UIManager._instance.ScoreChanged();
-        //Notice that the customer is done
-        done = true;
-        TablesManager._instance.ServedCustomer(gameObject);
+        if (!currentDrink.GetComponent<Tequila>().sombraDeAgave)
+        {
+            currentDrink.GetComponent<Rigidbody>().velocity = Vector3.left * throwForce;
+            currentDrink = null;
+            return;
+        }
+        if (TablesManager._instance.itemProbability > Random.value)
+        {
+            GameObject item = Pool._instance.SpawnPooledObj("Item", currentDrink.transform.position, Quaternion.identity);
+            if (item != null)
+                item.GetComponent<Rigidbody>().velocity = Vector3.right * throwForce;
+            currentDrink.GetComponent<Tequila>().Reinitialize();
+            currentDrink.SetActive(false);
+        }
+        else
+        {
+            currentDrink.GetComponent<Rigidbody>().velocity = Vector3.right * throwForce;
+        }
+        currentDrink = null;
     }
+    #region Drink
     public void GoodDrink()
     {
         //Start retiring
         StopAllCoroutines();
         body.velocity = Vector3.zero;
-        StartCoroutine("ReturnWithoutTequila");
+        
+        StartCoroutine(Return());
         //Increase score
         happySymbol.SetActive(true);
         drunkSymbol.SetActive(false);
@@ -148,14 +168,15 @@ public class Customer : MonoBehaviour
         UIManager._instance.ScoreChanged();
         //Notice that the customer is done
         done = true;
+        
     }
-    IEnumerator GetDrunk(GameObject tequila)
+    IEnumerator GetDrunk()
     {
-        tequila.GetComponent<Animator>().SetTrigger("Drink");
-        tequila.GetComponent<Tequila>().returning = true;
+        currentDrink.GetComponent<Animator>().SetTrigger("Drink");
+        currentDrink.GetComponent<Tequila>().returning = true;
         yield return new WaitForSeconds(2.0f);
         drunkSymbol.SetActive(true);
-        tequila.GetComponent<Rigidbody>().velocity = Vector3.right * throwForce;
+        ReturnTequila();
         StopAllCoroutines();
         body.velocity = Vector3.zero;
         if (drunk)
@@ -168,22 +189,22 @@ public class Customer : MonoBehaviour
             drunk = true;
         }
     }
-    IEnumerator DrunkToNormal(GameObject tequila)
+    IEnumerator DrunkToNormal()
     {
         hand = false;
-        tequila.GetComponent<Animator>().SetTrigger("Drink");
+        currentDrink.GetComponent<Animator>().SetTrigger("Drink");
         yield return new WaitForSeconds(2.0f);
         drunk = false;
         drunkSymbol.SetActive(false);
         hand = true;
-        ReturnTequila(tequila);
+        ReturnTequila();
     }
     #endregion
     #region Movement
     IEnumerator Move()
     {
         nextPoint = transform.position;
-        nextPoint += Vector3.left * distanceToMove;
+        nextPoint += Vector3.right * distanceToMove;
         while (Vector3.Distance(transform.position, nextPoint) > 0.1f)
         {
             Vector3 dir = nextPoint - transform.position;
@@ -192,22 +213,25 @@ public class Customer : MonoBehaviour
             timer = 0;
         }
     }
-    IEnumerator Return(GameObject tequila)
+    IEnumerator Return()
     {
         //Drink the tequila
         body.velocity = Vector3.zero;
-        tequila.GetComponent<Animator>().SetTrigger("Drink");
+        if(currentDrink)
+            currentDrink.GetComponent<Animator>().SetTrigger("Drink");
+        //Customer retire
         yield return new WaitForSeconds(2.0f);
+        body.velocity = Vector3.left * speed;
         //Return the tequila
-        body.velocity = Vector3.right * speed;
-        if (tequila)
-            ReturnTequila(tequila);
+        if (currentDrink)
+            ReturnTequila();
     }
     IEnumerator ReturnWithoutTequila()
     {
+        hand = false;
         body.velocity = Vector3.zero;
         yield return new WaitForSeconds(2.0f);
-        body.velocity = Vector3.right * speed;
+        body.velocity = Vector3.left * speed;
     }
     IEnumerator MadReturn()
     {
@@ -221,24 +245,9 @@ public class Customer : MonoBehaviour
         UIManager._instance.HealthChanged();
         body.velocity = Vector3.zero;
         yield return new WaitForSeconds(1.0f);
-        body.velocity = Vector3.right * speed;
+        body.velocity = Vector3.left * speed;
     }
     #endregion
-    void ReturnTequila(GameObject tequila)
-    {
-        if (TablesManager._instance.itemProbability > Random.value)
-        {
-            GameObject item = Pool._instance.SpawnPooledObj(TablesManager._instance.GetItemName(), tequila.transform.position, Quaternion.identity);
-            if (item != null)
-                item.GetComponent<Rigidbody>().velocity = Vector3.left * throwForce;
-            tequila.GetComponent<Tequila>().Reinitialize();
-            tequila.SetActive(false);
-        }
-        else
-        {
-            tequila.GetComponent<Rigidbody>().velocity = Vector3.left * throwForce;
-        }
-    }
     #region Setters & Getters
     public int Position { get { return customerPosition; } set { customerPosition = value; } }
     #endregion

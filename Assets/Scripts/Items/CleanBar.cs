@@ -12,6 +12,7 @@ public class CleanBar : Item {
         {
             customer.GetComponent<Customer>().GoodDrink();
         }
+        TablesManager._instance.CheckLevelUp();
         Reinitialize();
     }
     public override void Reinitialize()

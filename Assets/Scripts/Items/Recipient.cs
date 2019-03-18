@@ -16,7 +16,6 @@ public class Recipient : Item
         currentTequilas = tequilasNumber;
         player = FindObjectOfType<PlayerController>();
         mesh = transform.GetChild(3).GetComponent<MeshRenderer>();
-        transform.tag = "Item";
         for (int i = 0; i < 3; i++)
         {
             teqs[i] = transform.GetChild(i).gameObject;
@@ -24,16 +23,12 @@ public class Recipient : Item
     }
     public override void Activate()
     {
+        if(!player)
+            player = FindObjectOfType<PlayerController>();
         pos = player.Position;
         if (TablesManager._instance.PutRecipient(pos, gameObject))
         {
-            tag = "Recipiente";
             activated = true;
-            mesh.enabled = true;
-            for (int i = 0; i < 4; i++)
-            {
-                transform.GetChild(i).gameObject.SetActive(true);
-            }
         }
         else
         {

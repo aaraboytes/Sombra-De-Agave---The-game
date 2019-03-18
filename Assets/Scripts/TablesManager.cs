@@ -19,6 +19,7 @@ public class TablesManager : MonoBehaviour
 
     [Header("Customers")]
     public Transform[] customerPos;
+    public Transform customerLimitPos;
     public bool normalCustomer = true, strongCustomer, fastCustomer;
     public float timeBtwWaves;
     public string[] itemsNames;
@@ -28,7 +29,7 @@ public class TablesManager : MonoBehaviour
 
     [Header("Tables")]
     public Transform[] positions;
-    public float recipientZOffset;
+    public Vector3 recipientOffset;
     Recipient[] recipients = new Recipient[4];
     [SerializeField]
     bool[] recipientInTable = new bool[4];
@@ -119,7 +120,7 @@ public class TablesManager : MonoBehaviour
     {
         GameObject b = sombraDeAgave? Pool._instance.SpawnPooledObj("Tequila", positions[pos].position,Quaternion.identity) : 
                                         Pool._instance.SpawnPooledObj("Paloma", positions[pos].position,Quaternion.identity);
-        b.GetComponent<Rigidbody>().velocity = Vector3.right * (sombraDeAgave ? sombraDeAgaveForce : lordCrudaForce);
+        b.GetComponent<Rigidbody>().velocity = Vector3.left * (sombraDeAgave ? sombraDeAgaveForce : lordCrudaForce);
     }
     public bool PutRecipient(int pos,GameObject recipient)
     {
@@ -130,7 +131,7 @@ public class TablesManager : MonoBehaviour
         }
         else
         {
-            recipient.transform.position = positions[pos].position + Vector3.forward * recipientZOffset;
+            recipient.transform.position = positions[pos].position + recipientOffset;
             recipientInTable[pos] = true;
             recipients[pos] = recipient.GetComponent<Recipient>();
             recipient.SetActive(true);
@@ -147,10 +148,13 @@ public class TablesManager : MonoBehaviour
         GameObject particle = Pool._instance.SpawnPooledObj("GlassParticle", bottle.position, Quaternion.Euler(new Vector3(-90, 0, 0)));
         bottle.gameObject.SetActive(false);
     }
-    public void PoisonExplosion(Transform bottle)
+    public void PoisonExplosion(GameObject tequila,GameObject champurrado)
     {
-        GameObject particle = Pool._instance.SpawnPooledObj("PoisonParticle", bottle.position, Quaternion.Euler(new Vector3(-90, 0, 0)));
-        bottle.gameObject.SetActive(false);
+        Pool._instance.SpawnPooledObj("PoisonParticle", champurrado.transform.position, Quaternion.Euler(new Vector3(-90, 0, 0)));
+        Pool._instance.SpawnPooledObj("CeramicParticle", champurrado.transform.position, Quaternion.Euler(new Vector3(-90, 0, 0)));
+        Pool._instance.SpawnPooledObj("GlassParticle", tequila.transform.position, Quaternion.Euler(new Vector3(-90, 0, 0)));
+        tequila.SetActive(false);
+        champurrado.SetActive(false);
     }
     #endregion
     #region Customers
@@ -184,7 +188,7 @@ public class TablesManager : MonoBehaviour
     }
     #endregion
     #region Levels
-    void CheckLevelUp()
+    public void CheckLevelUp()
     {
         if (currentLevel < pointsPerLevel.Length)
         {

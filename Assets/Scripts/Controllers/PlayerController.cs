@@ -1,75 +1,123 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour {
-    public SwipeManager swipeControlls;
-    public LayerMask touchDetectionMask;
+    [Header("Movement")]
+    bool paused;
+    bool positioned = false;
     public Transform[] positions;
     public MovePoint currentMovePoint;
+    int currentPosition = 0;
     public float speed;
     CharacterController body;
     Vector3 movement;
     Vector3 direction;
     Animator anim;
-    int currentPosition = 0;
-    bool paused;
-    [SerializeField]
+
+    //Objects
+    GameObject itemObj = null;
     Item currentItem = null;
 
+    [Header("Touch")]
+    public LayerMask touchDetectionMask;
+    public float holdTime;
+    float timer;
+
+    [Header("UI")]
+    public Slider tequilaFiller;
 
     private void Start()
     {
         transform.position = new Vector3(positions[0].position.x, transform.position.y, positions[0].position.z);
         body = GetComponent<CharacterController>();
         anim = GetComponent<Animator>();
+        tequilaFiller.gameObject.SetActive(false);
     }
     void Update() {
         if (!paused)
         {
-            #region Input controlls
+            #region Input controlls PC
             //Input movement
             if (Input.GetKeyDown(KeyCode.UpArrow))
             {
-                StopAllCoroutines();
                 currentPosition--;
                 if (currentPosition < 0)
                     currentPosition = positions.Length - 1;
-                StartCoroutine("MoveToPoint");
             }else if (Input.GetKeyDown(KeyCode.DownArrow))
             {
-                StopAllCoroutines();
                 currentPosition++;
                 if(currentPosition == positions.Length)
                 {
                     currentPosition = 0;
                 }
-                StartCoroutine("MoveToPoint");
-            }else if (Input.GetMouseButtonDown(0))
-            {
-                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                RaycastHit hit;
-                if(Physics.Raycast(ray, out hit, 100.0f, touchDetectionMask))
-                {
-                    MovePoint point = hit.collider.gameObject.GetComponent<MovePoint>();
-                    if (point != currentMovePoint)
-                    {
-                        currentMovePoint.Deactivate();
-                        currentMovePoint = point;
-                        currentPosition = point.Activate();
-                        StopAllCoroutines();
-                        StartCoroutine("MoveToPoint");
-                    }
-                }
             }
             //Input throw bottles
-            if (Input.GetKeyDown(KeyCode.Z) || swipeControlls.SwipeRight)
+            if (Input.GetKeyDown(KeyCode.Z))
             {
-                TablesManager._instance.ThrowBottle(currentPosition,true);
+                if(positioned)
+                    tequilaFiller.gameObject.SetActive(true);
             }
-            if (Input.GetKeyDown(KeyCode.X) || swipeControlls.SwipeLeft)
+            else if (Input.GetKeyUp(KeyCode.Z))
+            {
+                timer = 0;
+                tequilaFiller.gameObject.SetActive(false);
+            }
+            if (Input.GetKey(KeyCode.Z))
+            {
+                if (positioned)
+                {
+                    timer += Time.deltaTime;
+                    if (timer > holdTime)
+                    {
+                        TablesManager._instance.ThrowBottle(currentPosition, true);
+                        timer = 0;
+                    }
+                    tequilaFiller.value = timer / holdTime;
+                }
+            }
+            if (Input.GetKeyDown(KeyCode.X))
             {
                 ActivateItem();
+            }
+            #endregion
+            #region Input controlls Touch
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (positioned)
+                {
+                    tequilaFiller.gameObject.SetActive(true);
+                    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                    RaycastHit hit;
+                    if (Physics.Raycast(ray, out hit, 100.0f, touchDetectionMask))
+                    {
+                        MovePoint point = hit.collider.gameObject.GetComponent<MovePoint>();
+                        if (point != currentMovePoint)
+                        {
+                            currentMovePoint.Deactivate();
+                            currentMovePoint = point;
+                            currentPosition = point.Activate();
+                        }
+                    }
+                }
+            }else if (Input.GetMouseButtonUp(0))
+            {
+                timer = 0;
+                tequilaFiller.gameObject.SetActive(false);
+            }
+            if (Input.GetMouseButton(0))
+            {
+                if (positioned)
+                {
+                    timer += Time.deltaTime;
+                    if (timer > holdTime)
+                    {
+                        TablesManager._instance.ThrowBottle(currentPosition, true);
+                        timer = 0;
+                    }
+                    tequilaFiller.value = timer / holdTime;
+                }
             }
             #endregion
             #region Player direction
@@ -86,13 +134,12 @@ public class PlayerController : MonoBehaviour {
         }
         #region Animation parameters
         //Animation
-        if(paused)
-            anim.SetBool("moving", false);
-        else
-            anim.SetBool("moving", Mathf.Abs(movement.x) + Mathf.Abs(movement.z) != 0);
-        anim.SetInteger("right", (int)-Input.GetAxisRaw("Horizontal"));
-        anim.SetInteger("up", (int)Input.GetAxisRaw("Vertical"));
+        anim.SetFloat("speed", -body.velocity.z);
         #endregion
+    }
+    private void FixedUpdate()
+    {
+        Move();
     }
     #region Objects and items
     private void OnTriggerEnter(Collider other)
@@ -102,7 +149,6 @@ public class PlayerController : MonoBehaviour {
             PickEmptyTequila(other.gameObject);
         }else if (other.CompareTag("Item")) {
             StoreItem(other.gameObject);
-            UIManager._instance.ItemAdquired(currentItem);
         }
     }
     void PickEmptyTequila(GameObject tequila)
@@ -114,43 +160,56 @@ public class PlayerController : MonoBehaviour {
     {
         if (currentItem)
         {
+            UIManager._instance.ItemUsed();
+            itemObj.SetActive(true);
+            itemObj = null;
             currentItem.Activate();
             currentItem = null;
-            UIManager._instance.ItemUsed();
         }
     }
     void StoreItem(GameObject item)
     {
-        if (currentItem == null || currentItem.name != item.GetComponent<Item>().name)
+        if (currentItem == null)
         {
-            if(currentItem!= null)
-                currentItem.gameObject.SetActive(false);
-            currentItem = item.GetComponent<Item>();
-            item.transform.rotation = Quaternion.identity;
-            item.GetComponent<Rigidbody>().velocity = Vector3.zero;
-            item.GetComponent<Rigidbody>().useGravity = false;
-            item.GetComponent<Rigidbody>().isKinematic = true;
-            item.GetComponent<Collider>().isTrigger = true;
-            if(item.GetComponent<MeshRenderer>())
-                item.GetComponent<MeshRenderer>().enabled = false;
-            if (item.transform.childCount > 0)
-            {
-                for (int i = 0; i < item.transform.childCount; i++)
-                {
-                    item.transform.GetChild(i).gameObject.SetActive(false);
-                }
-            }
+            //Spawn the new item
+            itemObj = Pool._instance.SpawnPooledObj(TablesManager._instance.GetItemName(),transform.position,Quaternion.identity);
+            itemObj.SetActive(false);
+            //Extract item script
+            currentItem = itemObj.GetComponent<Item>();
+            //Notice to button
+            UIManager._instance.ItemAdquired(currentItem);
+        }
+        //Reinitialize item bottle
+        item.GetComponent<Rigidbody>().useGravity = false;
+        item.GetComponent<Rigidbody>().velocity = Vector3.zero;
+        item.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+        item.SetActive(false);
+    }
+    #endregion
+    #region Movement
+    void Move()
+    {
+        if(Mathf.Abs(transform.position.z - positions[currentPosition].position.z) > 0.5f)
+        {
+            Vector3 direction = positions[currentPosition].position;
+            direction.y = transform.position.y;
+            direction = direction - transform.position;
+            movement = direction.normalized * speed * Time.deltaTime;
+            if (!body.isGrounded)
+                movement.y = Physics.gravity.y;
+            positioned = false;
         }
         else
         {
-            item.SetActive(false);
+            movement = Vector3.zero;
+            positioned = true;
         }
+        //Move
+        body.Move(movement);
     }
-    #endregion
-    #region Gameplay methods
     IEnumerator MoveToPoint()
     {
-        while (Vector3.Distance(transform.position, positions[currentPosition].position) > 0.5f)
+        while (Mathf.Abs(transform.position.z - positions[currentPosition].position.z) > 0.5f)
         {
             Vector3 direction = positions[currentPosition].position;
             direction.y = transform.position.y;

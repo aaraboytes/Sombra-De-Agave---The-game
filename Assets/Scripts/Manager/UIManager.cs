@@ -14,17 +14,21 @@ public class UIManager : MonoBehaviour
     public Text score;
     public GameObject[] health;
     public Text level;
-    public Image buttonImg;
-    public Sprite emptyItemSlot;
+    public ItemButton itemButton;
+    Animator itemButtonAnim;
+
     [Header("Advices UI")]
     public GameObject advicer;
     Animator advicerAnim;
     Text advicerText;
     private void Start()
     {
+        //Get itemButton animator
+        itemButtonAnim = itemButton.gameObject.GetComponent<Animator>();
+
         //Advicer UI
         advicerAnim = advicer.GetComponent<Animator>();
-        advicerText = advicer.transform.GetChild(0).GetComponent<Text>();
+        advicerText = advicer.transform.GetChild(1).GetComponent<Text>();
 
         //Main UI
         score.text = GameManager._instance.Score.ToString();
@@ -57,11 +61,11 @@ public class UIManager : MonoBehaviour
     }
     public void ItemUsed()
     {
-        buttonImg.sprite = emptyItemSlot;
+        itemButton.DropItem();
     }
     public void ItemAdquired(Item item)
     {
-        buttonImg.sprite = item.sprite;
+        itemButton.SetItem(item);
     }
     #endregion
     #region Advice

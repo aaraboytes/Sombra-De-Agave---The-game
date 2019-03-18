@@ -8,24 +8,27 @@ public class BottleDestroyer : MonoBehaviour
     {
         if (other.CompareTag("Tequila"))
         {
-            Pool._instance.SpawnPooledObj("GlassParticle", other.transform.position, Quaternion.Euler(new Vector3(-90,0,0)));
+            
             if (other.GetComponent<Tequila>().sombraDeAgave)
             {
+                Pool._instance.SpawnPooledObj("GlassParticle", other.transform.position, Quaternion.Euler(new Vector3(-90, 0, 0)));
                 GameManager._instance.Damage();
                 UIManager._instance.HealthChanged();
+            }
+            else
+            {
+                Pool._instance.SpawnPooledObj("CeramicParticle", other.transform.position, Quaternion.Euler(new Vector3(-90, 0, 0)));
             }
             other.GetComponent<Tequila>().Reinitialize();
             other.gameObject.SetActive(false);
         }else if (other.CompareTag("Item"))
         {
-            Pool._instance.SpawnPooledObj("GlassParticle", other.transform.position, Quaternion.Euler(new Vector3(-90, 0, 0)));
+            Pool._instance.SpawnPooledObj("ItemParticle", other.transform.position, Quaternion.Euler(new Vector3(-90, 0, 0)));
             GameObject item = other.gameObject;
-            item.transform.rotation = Quaternion.identity;
             item.GetComponent<Rigidbody>().velocity = Vector3.zero;
+            item.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
             item.GetComponent<Rigidbody>().useGravity = false;
-            item.GetComponent<Rigidbody>().isKinematic = true;
-            item.GetComponent<Collider>().isTrigger = true;
-            other.gameObject.SetActive(false);
+            item.SetActive(false);
         }
     }
 }

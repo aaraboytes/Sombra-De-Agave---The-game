@@ -27,7 +27,7 @@ public class GameManager : MonoBehaviour
     }
     private void Start()
     {
-        Invoke("GoToMainMenu", 3.0f);
+        //Invoke("GoToMainMenu", 3.0f);
         NewGame();
     }
     #region Setters & getters

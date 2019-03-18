@@ -16,17 +16,15 @@ public class GravityEnabler : MonoBehaviour
                 tequilaBody.useGravity = true;
                 tequilaBody.velocity = Vector3.zero;
                 if(forReturningBottles)
-                    tequilaBody.AddForce(Vector3.left * force);
-                else
                     tequilaBody.AddForce(Vector3.right * force);
+                else
+                    tequilaBody.AddForce(Vector3.left * force);
                 other.isTrigger = false;
             }
         }else if (other.CompareTag("Item"))
         {
-            other.isTrigger = false;
             Rigidbody itemBody = other.gameObject.GetComponent<Rigidbody>();
             itemBody.useGravity = true;
-            itemBody.isKinematic = false;
             itemBody.AddForce((Vector3.left + Vector3.up) * force);
         }
     }
